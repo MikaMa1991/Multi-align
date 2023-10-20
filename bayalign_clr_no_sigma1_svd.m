@@ -9,7 +9,7 @@ rng(824);
 
 t = linspace(0,1,N);
 f1 = @(x) 6*(0.8).^(20*x).*cos(10*pi.*x-pi/4);
-f2 = @(x) 5.5*(0.8).^(20*x).*sin(10*pi.*x);
+f2 = @(x) 6*(0.8).^(20*x).*sin(10*pi.*x);
 time_gap = 1/(N-1);
 a = [-0.5, 2];
 f1 = f1(t)';
@@ -39,43 +39,42 @@ q1 = sign(gradient(f1)/time_gap).*sqrt(abs(gradient(f1)/time_gap));
 q2 = sign(gradient(f2)/time_gap).*sqrt(abs(gradient(f2)/time_gap));
 
 %define the covariance for the gamma function
-
-% f_cov = ones(1, N);
-% % f_cov= [5*ones(1, (N-1)/2+31), 0.1*ones(1, (N-1)/2-30)];
-% Cr1 = diag(f_cov);
-% sigma_kernel = 10;
-% kernel_size = 51; % Adjust the size as needed
-% [X, Y] = meshgrid(-(kernel_size-1)/2:(kernel_size-1)/2, -(kernel_size-1)/2:(kernel_size-1)/2);
-% gaussian_kernel = exp(-(X.^2 + Y.^2) / (2 * sigma_kernel^2));
-% Cr2 = 0.08*conv2(Cr1, gaussian_kernel, 'same'); %change to 0.01, we can get second-optimal
-% Cr = Cr2;
-% [V, D, U] = svd(Cr);
-% neg_eigenvalues = find(diag(D) < 0);
-% D(neg_eigenvalues, neg_eigenvalues) = D(neg_eigenvalues, neg_eigenvalues)*-1;
-% Cr = V * D * V';
-
-
-
-% Define the value of pho
-pho = 0.999;  % You can change this to your desired value
-% Initialize an empty matrix of size (n+1) x (n+1)
-
-f_cov = ones(1, N);
-% f_cov= [ones(1, (N-1)/2+1), 0.99*ones(1, (N-1)/2)];
-Cr = diag(f_cov);
-% Cr = zeros(N, N);
-
-% Fill in the matrix
-for i = 1:N
-    for j = 1:N
-        if i ~= j
-            Cr(i, j) = pho^(abs(i-j));
-        end
-    end
-end
-
-Cr = 5*Cr;
 mu = zeros(1, N);
+% f_cov = ones(1, N);
+f_cov= [5*ones(1, (N-1)/2+1), 0.1*ones(1, (N-1)/2-0)];
+Cr1 = diag(f_cov);
+sigma_kernel = 10;
+kernel_size = 41; % Adjust the size as needed
+[X, Y] = meshgrid(-(kernel_size-1)/2:(kernel_size-1)/2, -(kernel_size-1)/2:(kernel_size-1)/2);
+gaussian_kernel = exp(-(X.^2 + Y.^2) / (2 * sigma_kernel^2));
+Cr2 = 0.09*conv2(Cr1, gaussian_kernel, 'same'); %change to 0.01, we can get second-optimal
+Cr = Cr2;
+[V, D, U] = svd(Cr);
+neg_eigenvalues = find(diag(D) < 0);
+D(neg_eigenvalues, neg_eigenvalues) = D(neg_eigenvalues, neg_eigenvalues)*-1;
+Cr = V * D * V';
+
+
+
+% % Define the value of pho
+% pho = 0.999;  % You can change this to your desired value
+% % Initialize an empty matrix of size (n+1) x (n+1)
+
+% % f_cov = ones(1, N);
+% f_cov= [ones(1, (N-1)/2+1), 0.8*ones(1, (N-1)/2)];
+% Cr = diag(f_cov);
+% % Cr = zeros(N, N);
+% 
+% % Fill in the matrix
+% for i = 1:N
+%     for j = 1:N
+%         if i ~= j
+%             Cr(i, j) = pho^(abs(i-j));
+%         end
+%     end
+% end
+% 
+% Cr = 5*Cr;
 
 % figure(8);clf
 % EX = mvnrnd(mu, Cr, 50);
@@ -129,7 +128,7 @@ gamma_in = (gamma_in-min(gamma_in))/(max(gamma_in)-min(gamma_in));
 plot(t, gamma_in);
 %%
 %2. Initiate sigma1
-sigma1_int = 2;
+sigma1_int = 5;
 
 %3: update g and sigma1
 J = 10000;
@@ -249,7 +248,7 @@ plot(cumsum(eigenvalue(1:50))/sum(eigenvalue),'linewidth', 1.5);
 
 
 %% Perform k-means clustering
-[idx, centers] = kmeans(gamma_new, 2);
+[idx, centers] = kmeans(gamma_new, 3);
 
 
 figure(11); clf;
