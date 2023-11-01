@@ -41,10 +41,10 @@ q2 = sign(gradient(f2)/time_gap).*sqrt(abs(gradient(f2)/time_gap));
 %define the covariance for the gamma function
 mu = zeros(1, N);
 % f_cov = ones(1, N);
-f_cov= [5*ones(1, (N-1)/2+1), 0.1*ones(1, (N-1)/2-0)];
+f_cov= [5*ones(1, (N-1)/2+1), 0.01*ones(1, (N-1)/2-0)];
 Cr1 = diag(f_cov);
-sigma_kernel = 10;
-kernel_size = 41; % Adjust the size as needed
+sigma_kernel = 8;
+kernel_size = 51; % Adjust the size as needed
 [X, Y] = meshgrid(-(kernel_size-1)/2:(kernel_size-1)/2, -(kernel_size-1)/2:(kernel_size-1)/2);
 gaussian_kernel = exp(-(X.^2 + Y.^2) / (2 * sigma_kernel^2));
 Cr2 = 0.09*conv2(Cr1, gaussian_kernel, 'same'); %change to 0.01, we can get second-optimal
@@ -128,7 +128,7 @@ gamma_in = (gamma_in-min(gamma_in))/(max(gamma_in)-min(gamma_in));
 plot(t, gamma_in);
 %%
 %2. Initiate sigma1
-sigma1_int = 5;
+sigma1_int = 2;
 
 %3: update g and sigma1
 J = 10000;
@@ -257,6 +257,7 @@ plot(t,gamma_new(idx==1,:),'Color', [0.8 0.8 0.8]);
 plot(t,gamma_new(idx==2,:),'g');
 plot(t, centers(1,:),'k','LineWidth',2)
 plot(t, centers(2,:),'b','LineWidth',2)
+plot(t, centers(3,:),'r','LineWidth',2)
 plot(t,gamma_t,'m--','LineWidth',2);
 lsize = 16; % Label fontsize
 nsize = 18; % Axis fontsize
@@ -277,9 +278,14 @@ opts.fontType   = 'Times';
 
 f2_gamma_t1 = interp1(t,f2,centers(1,:));
 f2_gamma_t2 = interp1(t,f2,centers(2,:));
+f2_gamma_t3 = interp1(t,f2,centers(3,:));
 figure(22);clf;
 plot(t,f1,'b.','LineWidth', 1.5);
 hold on;
 plot(t,f2,'g.','LineWidth', 1.5);
 plot(t, f2_gamma_t1, 'k','LineWidth', 1.5)
 plot(t, f2_gamma_t2, 'b','LineWidth', 1.5)
+plot(t, f2_gamma_t3, 'r','LineWidth', 1.5)
+
+% figure(1); hold on;
+% plot(t, t, 'k--')

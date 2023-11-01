@@ -5,7 +5,7 @@ clear; close all;
 N = 101;
 
 seed = rand*1000;
-rng(seed);
+rng("default");
 
 t1 = linspace(-3,3,N);
 
@@ -13,7 +13,7 @@ a = 0.5;
 time_gap = 1/(N-1);
 
 for j =1:N 
-    f(j) = 1.5*exp(-(t1(j)-1.7).^2/2) + 1.5*exp(-(t1(j)+1.7).^2/2);
+    f(j) = 1.5*exp(-(t1(j)-1.5).^2/0.4) + 1.5*exp(-(t1(j)+1.5).^2/0.4);
 end
 
 f = f - interp1([-3 3], [f(1) f(end)],t1);
@@ -25,7 +25,7 @@ gamma1 = t;
 f1 = interp1(t,f,gamma1);
 
 for j =1:N 
-    g(j) = exp(-t1(j).^2/2);
+    g(j) = 1.5*exp(-t1(j).^2/0.4);
 end
 f2 = interp1(t,g,t);
 
@@ -52,7 +52,7 @@ mu = zeros(1, N);
 
 
 % Define the value of pho
-pho = 0.9;  % You can change this to your desired value
+pho = 0.999;  % You can change this to your desired value
 % Initialize an empty matrix of size (n+1) x (n+1)
 
 f_cov = ones(1, N);
@@ -68,7 +68,7 @@ for i = 1:N
         end
     end
 end
-
+Cr = Cr*50;
 % A = rand(N, N);
 % 
 % % Form a symmetric matrix by multiplying A with its transpose
@@ -79,7 +79,17 @@ end
 % if min_eigenvalue <= 0
 %     Cr = Cr + eye(N) * (-min_eigenvalue + 1e-5);
 % end
+figure(1001); clf;
+imagesc(Cr);
+try chol(Cr)
+    disp('Matrix is symmetric positive definite.')
+catch ME
+    disp('Matrix is not symmetric positive definite')
+end
 
+inv_cr = inv(Cr);
+figure(1002); clf;
+imagesc(inv_cr);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Dynamic programming to match f1 and f2 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,12 +112,12 @@ end
 
 phi_int = zeros(1, N);
 
-for j = 1:dn
-    phi_int = phi_int + normrnd(0, sqrt(S(j,j)))*U1(j,:);
-end
-phi_int = phi_int-log(trapz(t,exp(phi_int)));
+% for j = 1:dn
+%     phi_int = phi_int + normrnd(0, sqrt(S(j,j)))*U1(j,:);
+% end
+% phi_int = phi_int-log(trapz(t,exp(phi_int)));
 
-% phi_int = mvnrnd(mu, Cr, 1);
+phi_int = mvnrnd(mu, Cr, 1);
 phi_int = phi_int-log(trapz(t,exp(phi_int)));
 
 figure(101); clf;
@@ -118,7 +128,7 @@ gamma_in = (gamma_in-min(gamma_in))/(max(gamma_in)-min(gamma_in));
 plot(t, gamma_in);
 
 %2. Initiate sigma1
-sigma1_int = 2;
+sigma1_int = 3;
 
 %3: update g and sigma1
 J = 10000;
@@ -132,14 +142,14 @@ probabilities = repmat(0.1, 1, 10);
 
 for j = 1: J
     %propose new phi
-%     kesi = mvnrnd(mu, Cr, 1);
-    kesi = zeros(1, N);
-    for jj = 1:dn
-        kesi = kesi + normrnd(0, sqrt(S(jj,jj)))*U1(jj,:);
-    end
+    kesi = mvnrnd(mu, Cr, 1);
+%     kesi = zeros(1, N);
+%     for jj = 1:dn
+%         kesi = kesi + normrnd(0, sqrt(S(jj,jj)))*U1(jj,:);
+%     end
     kesi = kesi-log(trapz(t,exp(kesi)));
     beta = randsample(betals, 1,true, probabilities);
-    phi_new = phi_set(j,:)*sqrt(1-beta^2) + beta*ksei;
+    phi_new = phi_set(j,:)*sqrt(1-beta^2) + beta*kesi;
     phi_new = phi_new-log(trapz(t,exp(phi_new)));
     
     % calculate MCMC acceptance ratio
@@ -188,7 +198,7 @@ figure(1); clf;
 hold on;
 plot(t,gamma_new);
 plot(t,gamma_t,'k','LineWidth',2);
-plot(t,gamma_mean','b--','LineWidth',2);
+% plot(t,gamma_mean','b--','LineWidth',2);
 lsize = 16; % Label fontsize
 nsize = 18; % Axis fontsize
 axis equal;
@@ -236,16 +246,23 @@ plot(cumsum(eigenvalue(1:50))/sum(eigenvalue),'linewidth', 1.5);
 
 %%
 % Perform k-means clustering
-[idx, centers] = kmeans(gamma_new, 2);
-
+K = 2;
+% [idx, centers] = kmeans(phi_set, K);
+[idx, centers] = kmeans(fphi_set, K);
+for i = 1: K
+    centers_g(i,:) = cumtrapz(t, exp(centers(i,:)))/trapz(t, exp(centers(i,:)));
+end
 
 figure(11); clf;
 hold on;
-plot(t,gamma_new(idx==1,:),'Color', [0.8 0.8 0.8]);
-plot(t,gamma_new(idx==2,:),'g');
-plot(t, centers(1,:),'k','LineWidth',2)
-plot(t, centers(2,:),'b','LineWidth',2)
-plot(t,gamma_t,'m--','LineWidth',2);
+% plot(t,gamma_new(idx==1,:),'Color', [0.8 0.8 0.8]);
+% plot(t,gamma_new(idx==2,:),'y');
+plot(t,fgamma(idx==1,:)','Color', [0.8 0.8 0.8]);
+plot(t,fgamma(idx==2,:),'y');
+plot(t, centers_g(1,:),'m','LineWidth',2)
+plot(t, centers_g(2,:),'c','LineWidth',2)
+plot(t,gamma_t,'r--','LineWidth',2);
+% plot(t,gamma_t,'m--','LineWidth',2);
 lsize = 16; % Label fontsize
 nsize = 18; % Axis fontsize
 axis equal;
@@ -263,11 +280,14 @@ opts.width      = 12;
 opts.height     = 10;
 opts.fontType   = 'Times';
 
-f2_gamma_t1 = interp1(t,f2,centers(1,:));
-f2_gamma_t2 = interp1(t,f2,centers(2,:));
+
+
+f2_gamma_t1 = interp1(t,f2,centers_g(1,:));
+f2_gamma_t2 = interp1(t,f2,centers_g(2,:));
 figure(22);clf;
 plot(t,f1,'b.','LineWidth', 1.5);
 hold on;
 plot(t,f2,'g.','LineWidth', 1.5);
-plot(t, f2_gamma_t1, 'k','LineWidth', 1.5)
-plot(t, f2_gamma_t2, 'b','LineWidth', 1.5)
+plot(t, f2_gamma_t1, 'm','LineWidth', 1.5)
+plot(t, f2_gamma_t2, 'c','LineWidth', 1.5)
+plot(t, f2_gamma_t, 'r--','LineWidth', 1.5)
